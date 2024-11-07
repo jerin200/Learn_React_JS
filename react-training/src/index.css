@@ -5,6 +5,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100vh;
 }
 
 code {
@@ -18,8 +19,15 @@ code {
 
 .left-section {
   background-color: #c5c5c5;
+  width: 100%;
 }
 
 .right-section {
-  background-color: #606060;
+  background-color: #dddddd;
+  padding: 20px;
+  width: 100%;
+}
+.container{
+  display: flex;
+  height: 100%;
 }

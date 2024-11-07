@@ -1,4 +1,5 @@
 import TodoList from "./TodoList";
+import RandomText from "./RandomText";
 export default function App() {
   return (
     <>
@@ -6,6 +7,9 @@ export default function App() {
         <div className="container">
           <div className="left-section">
             <TodoList />
+          </div>
+          <div className="right-section">
+            <RandomText />
           </div>
         </div>
       </div>
