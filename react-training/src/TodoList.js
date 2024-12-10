@@ -1,128 +1,104 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import "./TodoList.css";
-class TodoList extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      todos: [],
-      useLocalStorage: true,
-    };
-  }
 
-  componentDidMount() {
-    this.loadTodos();
-  }
+const TodoList = () => {
+  const [todos, setTodos] = useState([]);
+  const [useLocalStorage, setUseLocalStorage] = useState(true);
 
-  loadTodos() {
-    const storage = this.state.useLocalStorage ? localStorage : sessionStorage;
+  useEffect(() => {
+    loadTodos();
+  }, [useLocalStorage]);
+
+  const loadTodos = () => {
+    const storage = useLocalStorage ? localStorage : sessionStorage;
     const savedTodos = storage.getItem("todos");
-    this.setState({ todos: savedTodos ? JSON.parse(savedTodos) : [] });
-  }
-
-  saveTodos() {
-    const storage = this.state.useLocalStorage ? localStorage : sessionStorage;
-    storage.setItem("todos", JSON.stringify(this.state.todos));
-  }
-
-  toggleStorage = () => {
-    this.setState(
-      (prevState) => ({ useLocalStorage: !prevState.useLocalStorage }),
-      () => this.loadTodos()
-    );
+    setTodos(savedTodos ? JSON.parse(savedTodos) : []);
   };
 
-  addTodo = (todo) => {
-    this.setState(
-      (prevState) => ({ todos: [...prevState.todos, todo] }),
-      () => this.saveTodos()
-    );
+  const saveTodos = () => {
+    const storage = useLocalStorage ? localStorage : sessionStorage;
+    storage.setItem("todos", JSON.stringify(todos));
   };
 
-  deleteTodo = (index) => {
-    this.setState(
-      (prevState) => ({
-        todos: prevState.todos.filter((_, i) => i !== index),
-      }),
-      () => this.saveTodos()
-    );
+  useEffect(() => {
+    saveTodos();
+  }, [todos]);
+
+  const toggleStorage = () => {
+    setUseLocalStorage((prev) => !prev);
   };
 
-  render() {
-    const { todos, useLocalStorage } = this.state;
-
-    return (
-      <div className="todo-app">
-        <h1>TODO List</h1>
-        <label>
-          <input
-            type="checkbox"
-            checked={useLocalStorage}
-            onChange={this.toggleStorage}
-          />
-          Use LocalStorage
-        </label>
-        <TodoLists todos={todos} onDelete={this.deleteTodo} />
-        <AddTodo onAdd={this.addTodo} />
-      </div>
-    );
-  }
-}
-
-class TodoLists extends Component {
-  render() {
-    const { todos, onDelete } = this.props;
-    return (
-      <ul className="wrapper-todo">
-        {todos.map((todo, index) => (
-          <li key={index}>
-            {todo}{" "}
-            <div className="dlt-btn-conatiner">
-              <button className="dlt-btn" onClick={() => onDelete(index)}>
-                Delete
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-}
-
-class AddTodo extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { newTodo: "" };
-  }
-
-  handleChange = (event) => {
-    this.setState({ newTodo: event.target.value });
+  const addTodo = (todo) => {
+    setTodos((prevTodos) => [...prevTodos, todo]);
   };
 
-  handleSubmit = (event) => {
+  const deleteTodo = (index) => {
+    setTodos((prevTodos) => prevTodos.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="todo-app">
+      <h1>TODO List</h1>
+      <label>
+        <input
+          type="checkbox"
+          checked={useLocalStorage}
+          onChange={toggleStorage}
+        />
+        Use LocalStorage
+      </label>
+      <TodoLists todos={todos} onDelete={deleteTodo} />
+      <AddTodo onAdd={addTodo} />
+    </div>
+  );
+};
+
+const TodoLists = ({ todos, onDelete }) => {
+  return (
+    <ul className="wrapper-todo">
+      {todos.map((todo, index) => (
+        <li key={index}>
+          {todo}{" "}
+          <div className="dlt-btn-conatiner">
+            <button className="dlt-btn" onClick={() => onDelete(index)}>
+              Delete
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+const AddTodo = ({ onAdd }) => {
+  const [newTodo, setNewTodo] = useState("");
+
+  const handleChange = (event) => {
+    setNewTodo(event.target.value);
+  };
+
+  const handleSubmit = (event) => {
     event.preventDefault();
-    const { newTodo } = this.state;
     if (newTodo.trim()) {
-      this.props.onAdd(newTodo.trim());
-      this.setState({ newTodo: "" });
+      onAdd(newTodo.trim());
+      setNewTodo("");
     }
   };
 
-  render() {
-    return (
-      <form onSubmit={this.handleSubmit}>
-        <input
-          className="text-box"
-          type="text"
-          value={this.state.newTodo}
-          onChange={this.handleChange}
-          placeholder="Add a new TODO"
-        />
-        <button className="btn-main" type="submit">
-          Add
-        </button>
-      </form>
-    );
-  }
-}
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        className="text-box"
+        type="text"
+        value={newTodo}
+        onChange={handleChange}
+        placeholder="Add a new TODO"
+      />
+      <button className="btn-main" type="submit">
+        Add
+      </button>
+    </form>
+  );
+};
 
 export default TodoList;
