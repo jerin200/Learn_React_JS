@@ -1,5 +1,5 @@
-import TodoList, { TodoApp } from "./TodoList";
-import RandomText from "./RandomText";
+// import RandomText from "./RandomText";
+import TodoApp from "./TodoList.js";
 export default function App() {
   return (
     <>

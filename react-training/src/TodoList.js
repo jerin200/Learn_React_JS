@@ -1,104 +1,73 @@
-import React, { createContext, useReducer, useContext } from "react";
+import React, { createContext, useReducer, useContext, useState } from "react";
 import "./TodoList.css";
-
-const initialState = {
-  todos: [],
-};
-
-const ADD_TODO = "ADD_TODO";
-const REMOVE_TODO = "REMOVE_TODO";
-const UPDATE_TODO = "UPDATE_TODO";
-
-function todoReducer(state, action) {
+const todoReducer = (state, action) => {
   switch (action.type) {
-    case ADD_TODO:
-      return {
-        ...state,
-        todos: [...state.todos, action.payload],
-      };
-    case REMOVE_TODO:
-      return {
-        ...state,
-        todos: state.todos.filter((todo) => todo.id !== action.payload),
-      };
-    case UPDATE_TODO:
-      return {
-        ...state,
-        todos: state.todos.map((todo) =>
-          todo.id === action.payload.id ? { ...todo, ...action.payload } : todo
-        ),
-      };
+    case "ADD_TODO":
+      return [...state, { id: Date.now(), text: action.payload }];
     default:
       return state;
   }
-}
+};
 
-const TodoContext = createContext();
+const TodoApp = () => {
+  const [todos, dispatch] = useReducer(todoReducer, []);
+  const [todoText, setTodoText] = useState("");
+  const [error, setError] = useState("");
 
-export function TodoProvider({ children }) {
-  const [state, dispatch] = useReducer(todoReducer, initialState);
-  return (
-    <TodoContext.Provider value={{ state, dispatch }}>
-      {children}
-    </TodoContext.Provider>
-  );
-}
+  const validateInput = () => {
+    if (!todoText.trim()) {
+      setError("TODO text cannot be empty.");
+      return false;
+    }
+    if (todoText.trim().length < 3) {
+      setError("TODO text must be at least 3 characters long.");
+      return false;
+    }
+    setError("");
+    return true;
+  };
 
-export function useTodos() {
-  const context = useContext(TodoContext);
-  if (!context) {
-    throw new Error("useTodos must be used within a TodoProvider");
-  }
-  return context;
-}
+  const handleInputChange = (e) => {
+    setTodoText(e.target.value);
+    if (error) validateInput();
+  };
 
-export function TodoApp() {
-  return (
-    <TodoProvider>
-      <TodoList />
-      <AddTodoForm />
-    </TodoProvider>
-  );
-}
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (!validateInput()) return;
 
-function TodoList() {
-  const { state, dispatch } = useTodos();
+    dispatch({ type: "ADD_TODO", payload: todoText.trim() });
 
-  const handleRemove = (id) => {
-    dispatch({ type: REMOVE_TODO, payload: id });
+    setTodoText("");
   };
 
   return (
-    <ul>
-      {state.todos.map((todo) => (
-        <li key={todo.id}>
-          {todo.text}
-          <button onClick={() => handleRemove(todo.id)}>Remove</button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function AddTodoForm() {
-  const { dispatch } = useTodos();
-  const [text, setText] = React.useState("");
-
-  const handleAdd = () => {
-    const newTodo = { id: Date.now(), text };
-    dispatch({ type: ADD_TODO, payload: newTodo });
-    setText("");
-  };
-
-  return (
-    <div className="main-conatiner">
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Enter a TODO"
-      />
-      <button onClick={handleAdd}>Add TODO</button>
+    <div className="todo-container">
+      <h1>TODO Application</h1>
+      <form onSubmit={handleFormSubmit} className="todo-form">
+        <div className="input-group">
+          <input
+            type="text"
+            value={todoText}
+            onChange={handleInputChange}
+            placeholder="Enter TODO"
+            className={`todo-input ${error ? "error-border" : ""}`}
+          />
+          {error && <p className="error-text">{error}</p>}
+        </div>
+        <button type="submit" className="add-button">
+          Add TODO
+        </button>
+      </form>
+      <ul className="todo-list">
+        {todos.map((todo) => (
+          <li key={todo.id} className="todo-item">
+            {todo.text}
+          </li>
+        ))}
+      </ul>
     </div>
   );
-}
+};
+
+export default TodoApp;
