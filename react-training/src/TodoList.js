@@ -1,104 +1,104 @@
-import React, { useState, useEffect } from "react";
+import React, { createContext, useReducer, useContext } from "react";
 import "./TodoList.css";
 
-const TodoList = () => {
-  const [todos, setTodos] = useState([]);
-  const [useLocalStorage, setUseLocalStorage] = useState(true);
-
-  useEffect(() => {
-    loadTodos();
-  }, [useLocalStorage]);
-
-  const loadTodos = () => {
-    const storage = useLocalStorage ? localStorage : sessionStorage;
-    const savedTodos = storage.getItem("todos");
-    setTodos(savedTodos ? JSON.parse(savedTodos) : []);
-  };
-
-  const saveTodos = () => {
-    const storage = useLocalStorage ? localStorage : sessionStorage;
-    storage.setItem("todos", JSON.stringify(todos));
-  };
-
-  useEffect(() => {
-    saveTodos();
-  }, [todos]);
-
-  const toggleStorage = () => {
-    setUseLocalStorage((prev) => !prev);
-  };
-
-  const addTodo = (todo) => {
-    setTodos((prevTodos) => [...prevTodos, todo]);
-  };
-
-  const deleteTodo = (index) => {
-    setTodos((prevTodos) => prevTodos.filter((_, i) => i !== index));
-  };
-
-  return (
-    <div className="todo-app">
-      <h1>TODO List</h1>
-      <label>
-        <input
-          type="checkbox"
-          checked={useLocalStorage}
-          onChange={toggleStorage}
-        />
-        Use LocalStorage
-      </label>
-      <TodoLists todos={todos} onDelete={deleteTodo} />
-      <AddTodo onAdd={addTodo} />
-    </div>
-  );
+const initialState = {
+  todos: [],
 };
 
-const TodoLists = ({ todos, onDelete }) => {
+const ADD_TODO = "ADD_TODO";
+const REMOVE_TODO = "REMOVE_TODO";
+const UPDATE_TODO = "UPDATE_TODO";
+
+function todoReducer(state, action) {
+  switch (action.type) {
+    case ADD_TODO:
+      return {
+        ...state,
+        todos: [...state.todos, action.payload],
+      };
+    case REMOVE_TODO:
+      return {
+        ...state,
+        todos: state.todos.filter((todo) => todo.id !== action.payload),
+      };
+    case UPDATE_TODO:
+      return {
+        ...state,
+        todos: state.todos.map((todo) =>
+          todo.id === action.payload.id ? { ...todo, ...action.payload } : todo
+        ),
+      };
+    default:
+      return state;
+  }
+}
+
+const TodoContext = createContext();
+
+export function TodoProvider({ children }) {
+  const [state, dispatch] = useReducer(todoReducer, initialState);
   return (
-    <ul className="wrapper-todo">
-      {todos.map((todo, index) => (
-        <li key={index}>
-          {todo}{" "}
-          <div className="dlt-btn-conatiner">
-            <button className="dlt-btn" onClick={() => onDelete(index)}>
-              Delete
-            </button>
-          </div>
+    <TodoContext.Provider value={{ state, dispatch }}>
+      {children}
+    </TodoContext.Provider>
+  );
+}
+
+export function useTodos() {
+  const context = useContext(TodoContext);
+  if (!context) {
+    throw new Error("useTodos must be used within a TodoProvider");
+  }
+  return context;
+}
+
+export function TodoApp() {
+  return (
+    <TodoProvider>
+      <TodoList />
+      <AddTodoForm />
+    </TodoProvider>
+  );
+}
+
+function TodoList() {
+  const { state, dispatch } = useTodos();
+
+  const handleRemove = (id) => {
+    dispatch({ type: REMOVE_TODO, payload: id });
+  };
+
+  return (
+    <ul>
+      {state.todos.map((todo) => (
+        <li key={todo.id}>
+          {todo.text}
+          <button onClick={() => handleRemove(todo.id)}>Remove</button>
         </li>
       ))}
     </ul>
   );
-};
+}
 
-const AddTodo = ({ onAdd }) => {
-  const [newTodo, setNewTodo] = useState("");
+function AddTodoForm() {
+  const { dispatch } = useTodos();
+  const [text, setText] = React.useState("");
 
-  const handleChange = (event) => {
-    setNewTodo(event.target.value);
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (newTodo.trim()) {
-      onAdd(newTodo.trim());
-      setNewTodo("");
-    }
+  const handleAdd = () => {
+    const newTodo = { id: Date.now(), text };
+    dispatch({ type: ADD_TODO, payload: newTodo });
+    setText("");
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div className="main-conatiner">
       <input
-        className="text-box"
         type="text"
-        value={newTodo}
-        onChange={handleChange}
-        placeholder="Add a new TODO"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Enter a TODO"
       />
-      <button className="btn-main" type="submit">
-        Add
-      </button>
-    </form>
+      <button onClick={handleAdd}>Add TODO</button>
+    </div>
   );
-};
-
-export default TodoList;
+}

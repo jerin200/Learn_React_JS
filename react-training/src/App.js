@@ -1,4 +1,4 @@
-import TodoList from "./TodoList";
+import TodoList, { TodoApp } from "./TodoList";
 import RandomText from "./RandomText";
 export default function App() {
   return (
@@ -6,11 +6,11 @@ export default function App() {
       <div className="main-wrapper">
         <div className="container">
           <div className="left-section">
-            <TodoList />
+            <TodoApp />
           </div>
-          <div className="right-section">
+          {/* <div className="right-section">
             <RandomText />
-          </div>
+          </div> */}
         </div>
       </div>
     </>
